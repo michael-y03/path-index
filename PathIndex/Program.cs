@@ -3,7 +3,7 @@ namespace PathIndex
 {
     class Program
     {
-        static List<String> entries = new List<string>();
+        static List<Entry> entries = new List<Entry>();
 
         static void Main(string[] args)
         {
@@ -16,12 +16,12 @@ namespace PathIndex
                 while (input.Length == 0)
                 {
                     Console.Write("> ");
-                    input = Console.ReadLine().Trim().ToLower();
+                    input = Console.ReadLine().Trim();
                 }
                 
                 string[] tokens = TokenizeInput(input);
 
-                string command = tokens[0];
+                string command = tokens[0].ToLower();
                 string[] commandArgs = tokens.Length > 1 ? tokens[1..] : Array.Empty<string>();
 
                 switch (command)
@@ -54,10 +54,10 @@ namespace PathIndex
         static void HelpCommand()
         {
             Console.WriteLine("Commands:");
-            Console.WriteLine("  help         Show this help text");
-            Console.WriteLine("  add <path>   Add a new entry");
-            Console.WriteLine("  list         List all entries added this session");
-            Console.WriteLine("  quit         Close the program\n");
+            Console.WriteLine("  help                       Show this help text");
+            Console.WriteLine("  add <path> [name] [note]   Add a new entry (No spaces in path/name/note yet.)");
+            Console.WriteLine("  list                       List all entries added this session");
+            Console.WriteLine("  quit                       Close the program\n");
         }
         
         static void AddCommand(string[] args)
@@ -67,14 +67,14 @@ namespace PathIndex
                 Console.WriteLine("Incorrect Usage: add <path>\n");
                 return;
             }
-            entries.Add(args[0]);
+            entries.Add(new Entry(args));
         }
 
         static void ListCommand()
         {
-            foreach (var entry in entries)
+            for (int i=0; i < entries.Count; i++)
             {
-                Console.WriteLine(entry);
+                Console.WriteLine(i + " | " + entries[i].Name + " | " + entries[i].Path + (entries[i].Note != null ? " | " + entries[i].Note : ""));
             }
             Console.WriteLine();
         }
