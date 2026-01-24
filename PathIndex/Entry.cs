@@ -23,8 +23,13 @@ namespace PathIndex
 
         private static string GetFolderName(string path)
         {
-            if (path.EndsWith('\\'))
-                path = path.Substring(0, path.Length - 1);
+            while (true)
+            {
+                if (path.EndsWith('\\'))
+                    path = path.Substring(0, path.Length - 1);
+                else
+                    break;
+            }
 
             string name = "";
             for (int i = path.Length-1; i >= 0; i--)
