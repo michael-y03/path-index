@@ -49,6 +49,12 @@ namespace PathIndex
                     case "tag":
                         TagCommand(commandArgs);
                         break;
+                    case "untag":
+                        UntagCommand(commandArgs);
+                        break;
+                    case "tags":
+                        TagsCommand(commandArgs);
+                        break;
                     case "info":
                         InfoCommand(commandArgs);
                         break;
@@ -77,6 +83,9 @@ namespace PathIndex
             Console.WriteLine("  remove <index>                   Remove an entry");
             Console.WriteLine("  edit <index> clear-note          Clear the note for an entry");
             Console.WriteLine("  edit <index> <name|note> <value> Edit one field (name/note) for an entry");
+            Console.WriteLine("  tag <id> <tag>                   Add a tag to an entry");
+            Console.WriteLine("  untag <id> <tag>                 remove a tag from an entry");
+            Console.WriteLine("  tags <id>                        Show tags for one entry");
             Console.WriteLine("  list                             List entries");
             Console.WriteLine("  info <index>                     Show full details for one entry");
             Console.WriteLine("  quit / exit                      Close PathIndex\n");
@@ -149,10 +158,7 @@ namespace PathIndex
             if (nullableIndex is int index)
             {
                 Entry entry = entries[index];
-                String tags = entry.Tags.Count >= 0 ? entry.Tags[0] : "";
-                if (entry.Tags.Count > 1)
-                    foreach (String tag in entry.Tags.Slice(1, entry.Tags.Count-1))
-                        tags += ", " + tag;
+                string tags = string.Join(", ", entry.Tags);
                 Console.WriteLine("Entry " + (index + 1) + "\nName: " + entry.Name + "\nPath: " + entry.TargetPath + (entry.Note != null ? "\nNote: " + entry.Note : "") + (entry.Tags.Count != 0 ? "\nTags: " + tags : "") + "\n");
             }
         }
@@ -283,10 +289,55 @@ namespace PathIndex
             if (!entry.Tags.Contains(tag))
             {
                 entry.Tags.Add(tag);
-                Console.WriteLine("Added Tag: " + tag + "\n");
+                Console.WriteLine("Entry " + (index + 1) + " (" + entry.Name + ") added Tag: " + tag + "\n");
             }
             else
-                Console.WriteLine("Tag: " + tag + " already exists. " + "\n");
+                Console.WriteLine("Tag: " + tag + " already exists" + " on entry " + (index + 1) + ".\n");
         }
+
+        private static void UntagCommand(string[] args)
+        {
+            const string usage = "Usage: untag <index> <tag>\n";
+            if (args.Length != 2)
+            {
+                Console.WriteLine(usage);
+                return;
+            }
+
+            int? nullableIndex = TryGetEntryZeroBasedIndex(args, usage);
+            if (nullableIndex is not int index)
+                return;
+
+            Entry entry = entries[index];
+
+            string tag = args[1].ToLowerInvariant();
+            if (entry.Tags.Contains(tag))
+            {
+                entry.Tags.Remove(tag);
+                Console.WriteLine("Entry " + (index + 1) + " (" + entry.Name + ") removed Tag: " + tag + "\n");
+            }
+            else
+                Console.WriteLine("Tag: " + tag + " not found" + " on entry " + (index + 1) + ".\n");
+        }
+
+        private static void TagsCommand(string[] args)
+        {
+            const string usage = "Usage: tags <index>\n";
+            if (args.Length != 1)
+            {
+                Console.WriteLine(usage);
+                return;
+            }
+
+            int? nullableIndex = TryGetEntryZeroBasedIndex(args, usage);
+            if (nullableIndex is not int index)
+                return;
+
+            Entry entry = entries[index];
+
+            string tags = string.Join(", ", entry.Tags);
+            Console.WriteLine("Entry " + (index + 1) + " (" + entry.Name + ")" + (entry.Tags.Count != 0 ? "\nTags: " + tags : "\nTags: (None)") + "\n");
+        }
+
     }
 }
