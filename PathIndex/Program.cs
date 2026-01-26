@@ -1,4 +1,5 @@
 ﻿
+
 namespace PathIndex
 {
     class Program
@@ -44,6 +45,9 @@ namespace PathIndex
                         break;
                     case "edit":
                         EditCommand(commandArgs);
+                        break;
+                    case "tag":
+                        TagCommand(commandArgs);
                         break;
                     case "info":
                         InfoCommand(commandArgs);
@@ -134,7 +138,7 @@ namespace PathIndex
         {
             for (int i = 0; i < entries.Count; i++)
             {
-                Console.WriteLine(i + 1 + " | " + entries[i].Name + " | " + entries[i].TargetPath + (entries[i].Note != null ? " | " + entries[i].Note : ""));
+                Console.WriteLine(i + 1 + " | " + entries[i].Name + " | " + entries[i].TargetPath + (entries[i].Note != null ? " | " + entries[i].Note : "") + (entries[i].Tags.Count != 0 ? " | (" + entries[i].Tags.Count + " tags)" : ""));
             }
             Console.WriteLine();
         }
@@ -145,7 +149,11 @@ namespace PathIndex
             if (nullableIndex is int index)
             {
                 Entry entry = entries[index];
-                Console.WriteLine("Entry " + (index + 1) + "\nName: " + entry.Name + "\nPath: " + entry.TargetPath + (entry.Note != null ? "\nNote: " + entry.Note : "") + "\n");
+                String tags = entry.Tags.Count >= 0 ? entry.Tags[0] : "";
+                if (entry.Tags.Count > 1)
+                    foreach (String tag in entry.Tags.Slice(1, entry.Tags.Count-1))
+                        tags += ", " + tag;
+                Console.WriteLine("Entry " + (index + 1) + "\nName: " + entry.Name + "\nPath: " + entry.TargetPath + (entry.Note != null ? "\nNote: " + entry.Note : "") + (entry.Tags.Count != 0 ? "\nTags: " + tags : "") + "\n");
             }
         }
 
@@ -254,6 +262,31 @@ namespace PathIndex
                 return null;
             }
             return index - 1;
+        }
+
+        private static void TagCommand(string[] args)
+        {
+            const string usage = "Usage: tag <index> <tag>\n";
+            if (args.Length != 2)
+            {
+                Console.WriteLine(usage);
+                return;
+            }
+
+            int? nullableIndex = TryGetEntryZeroBasedIndex(args, usage);
+            if (nullableIndex is not int index)
+                return;
+
+            Entry entry = entries[index];
+
+            string tag = args[1].ToLowerInvariant();
+            if (!entry.Tags.Contains(tag))
+            {
+                entry.Tags.Add(tag);
+                Console.WriteLine("Added Tag: " + tag + "\n");
+            }
+            else
+                Console.WriteLine("Tag: " + tag + " already exists. " + "\n");
         }
     }
 }
