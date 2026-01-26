@@ -12,16 +12,19 @@ namespace PathIndex
 
             while (true)
             {
-                string input = "";
+                string? input = "";
                 while (input.Length == 0)
                 {
                     Console.Write("> ");
-                    input = Console.ReadLine().Trim();
+                    input = Console.ReadLine();
+                    if (input is null)
+                        return;
+                    input = input.Trim();
                 }
-                
+
                 string[] tokens = TokenizeInput(input);
 
-                string command = tokens[0].ToLower();
+                string command = tokens[0].ToLowerInvariant();
                 string[] commandArgs = tokens.Length > 1 ? tokens[1..] : Array.Empty<string>();
 
                 switch (command)
@@ -36,6 +39,12 @@ namespace PathIndex
                     case "add":
                         AddCommand(commandArgs);
                         break;
+                    case "remove":
+                        RemoveCommand(commandArgs);
+                        break;
+                    case "edit":
+                        EditCommand(commandArgs);
+                        break;
                     case "info":
                         InfoCommand(commandArgs);
                         break;
@@ -46,79 +55,205 @@ namespace PathIndex
                         Console.WriteLine("Unknown command: '" + command + "'. Type 'help' to see available commands.\n");
                         break;
                 }
-            } 
+            }
         }
 
         static string[] TokenizeInput(string input)
         {
-            String[] tokens = input.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-           
+            string[] tokens = input.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
             return tokens;
         }
 
         static void HelpCommand()
         {
             Console.WriteLine("Commands:");
-            Console.WriteLine("  help                       Show this help");
-            Console.WriteLine("  add <path> [name] [note]   Add an entry (spaces aren't supported in arguments yet)");
-            Console.WriteLine("  list                       List entries");
-            Console.WriteLine("  info <index>               Show full details for one entry");
-            Console.WriteLine("  quit / exit                Close PathIndex\n");
+            Console.WriteLine("  help                             Show this help");
+            Console.WriteLine("  add <path> [name] [note]         Add an entry (spaces aren't supported in arguments yet)");
+            Console.WriteLine("  remove <index>                   Remove an entry");
+            Console.WriteLine("  edit <index> clear-note          Clear the note for an entry");
+            Console.WriteLine("  edit <index> <name|note> <value> Edit one field (name/note) for an entry");
+            Console.WriteLine("  list                             List entries");
+            Console.WriteLine("  info <index>                     Show full details for one entry");
+            Console.WriteLine("  quit / exit                      Close PathIndex\n");
         }
-        
+
         static void AddCommand(string[] args)
         {
-            if (args.Length == 0)
+            if (args.Length == 0 || args.Length > 3)
             {
                 Console.WriteLine("Usage: add <path> [name] [note]\nNote: spaces aren’t supported in arguments yet.\n");
                 return;
             }
-            Entry e = new Entry(args);
+            string? name = null;
+            if (args.Length >= 2)
+                name = args[1];
+
+
+            if (TryGetDefaultNameFromPath(args[0]) is string n)
+            {
+                if (name is null)
+                    name = n;
+            }
+            else
+            {
+                Console.WriteLine("Path not found: '" + args[0] + "'. The path must already exist.\n");
+                return;
+            }
+            string? note = args.Length > 2 ? args[2] : null;
+            Entry e = new Entry(args[0], name, note);
             entries.Add(e);
             Console.WriteLine("Added: " + e.Name + "\n");
         }
 
+        private static string? TryGetDefaultNameFromPath(string path)
+        {
+            if (Path.GetPathRoot(path) == Path.GetFullPath(path))
+                return Path.GetPathRoot(path);
+
+            while (path.EndsWith('/') || path.EndsWith('\\'))
+                path = path.Remove(path.Length - 1);
+
+            string? folderName;
+            if (Directory.Exists(path))
+            {
+                folderName = Path.GetFileName(path);
+                return folderName;
+            }
+
+            if (File.Exists(path))
+            {
+                folderName = Path.GetFileName(Path.GetDirectoryName(path));
+                return folderName;
+            }
+
+            return null;
+        }
+
         static void ListCommand()
         {
-            for (int i=0; i < entries.Count; i++)
+            for (int i = 0; i < entries.Count; i++)
             {
-                Console.WriteLine(i+1 + " | " + entries[i].Name + " | " + entries[i].Path + (entries[i].Note != null ? " | " + entries[i].Note : ""));
+                Console.WriteLine(i + 1 + " | " + entries[i].Name + " | " + entries[i].TargetPath + (entries[i].Note != null ? " | " + entries[i].Note : ""));
             }
             Console.WriteLine();
         }
 
         private static void InfoCommand(string[] args)
         {
+            int? nullableIndex = TryGetEntryZeroBasedIndex(args, "Usage: info <index>");
+            if (nullableIndex is int index)
+            {
+                Entry entry = entries[index];
+                Console.WriteLine("Entry " + (index + 1) + "\nName: " + entry.Name + "\nPath: " + entry.TargetPath + (entry.Note != null ? "\nNote: " + entry.Note : "") + "\n");
+            }
+        }
+
+        private static void RemoveCommand(string[] args)
+        {
+            int? nullableIndex = TryGetEntryZeroBasedIndex(args, "Usage: remove <index>");
+            if (nullableIndex is int index)
+            {
+                string removedName = entries[index].Name;
+                entries.RemoveAt(index);
+                Console.WriteLine("Removed entry " + (index + 1) + ": " + removedName + "\n");
+            }
+        }
+
+        private static void EditCommand(string[] args)
+        {
+            const string usage = "Usage: edit <index> name <value>\n       edit <index> note <value>\n       edit <index> clear-note\n";
+            if (args.Length < 2)
+            {
+                Console.WriteLine(usage);
+                return;
+            }
+
+            int? nullableIndex = TryGetEntryZeroBasedIndex(args, usage);
+            if (nullableIndex is not int index)
+                return;
+            Entry entry = entries[index];
+            string field = args[1].ToLowerInvariant();
+            if (field != "clear-note" && field != "name" && field != "note")
+            {
+                Console.WriteLine("Invalid field: '" + field + "'.\nValid fields: name, note, clear-note.\n" + usage);
+                return;
+            }
+
+            if (field == "clear-note")
+            {
+                if (args.Length != 2)
+                {
+                    Console.WriteLine(usage);
+                    return;
+                }
+                ClearNote(entry);
+                return;
+            }
+            if (args.Length != 3)
+            {
+                Console.WriteLine(usage);
+                return;
+            }
+            if (field == "name")
+            {
+                UpdateName(entry, args[2]);
+                return;
+            }
+            if (field == "note")
+            {
+                UpdateNote(entry, args[2]);
+                return;
+            }
+        }
+
+        private static void UpdateName(Entry entry, string newName)
+        {
+            string originalName = entry.Name;
+            entry.Name = newName;
+            Console.WriteLine("Updated name: " + originalName + " to " + newName + "\n");
+        }
+
+        private static void UpdateNote(Entry entry, string newNote)
+        {
+            string originalNote = "(" + (entry.Note == null ? "none" : entry.Note) + ")";
+            entry.Note = newNote;
+            Console.WriteLine("Updated note: " + originalNote + " -> " + newNote + "\n");
+        }
+
+        private static void ClearNote(Entry entry)
+        {
+            string? originalNote = entry.Note;
+            entry.Note = null;
+            Console.WriteLine(originalNote == null ? "Nothing to clear.\n" : "Cleared note: (" + originalNote + ")\n");
+        }
+
+        private static int? TryGetEntryZeroBasedIndex(string[] args, string usage)
+        {
             if (entries.Count == 0)
             {
                 Console.WriteLine("No entries yet. Add one with: add <path>.\n");
-                return;
+                return null;
             }
 
             if (args.Length == 0)
             {
-                Console.WriteLine("Usage: info <index>\nIndex must be a number between 1 and " + entries.Count + ".\n");
-                return;
+                Console.WriteLine(usage + "\nIndex must be a number between 1 and " + entries.Count + ".\n");
+                return null;
             }
 
-            int index;
-            try
+            if (!int.TryParse(args[0], out int index))
             {
-                index = Convert.ToInt32(args[0]);
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("Invalid index: '" + args[0] + "'.\nIndex must be a number (1-" + (entries.Count) + ").\n");
-                return;
+                Console.WriteLine("Invalid index: '" + args[0] + "'.\nIndex must be a number.\n");
+                return null;
             }
 
             if (index < 1 || index > entries.Count)
             {
-                Console.WriteLine("Index out of range. Valid range: 1–"+ entries.Count + ".\nNo entry at " + index + ". Use 'list' to see valid indices.\n");
-                return;
+                Console.WriteLine("Index out of range. Valid range: 1–" + entries.Count + ".\nNo entry at " + index + ". Use 'list' to see valid indices.\n");
+                return null;
             }
-
-            Console.WriteLine("Entry " + index + "\nName: " + entries[index - 1].Name + "\nPath: " + entries[index - 1].Path + (entries[index - 1].Note != null ? "\nNote: " + entries[index - 1].Note : "") + "\n");
+            return index - 1;
         }
     }
 }
