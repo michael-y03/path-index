@@ -14,6 +14,7 @@ namespace PathIndex
         {
             Console.WriteLine("PathIndex — index and annotate local folders");
             Console.WriteLine("Type 'help' to see commands.\n");
+            LoadCommand();
 
             while (true)
             {
@@ -40,6 +41,9 @@ namespace PathIndex
                         return;
                     case "save":
                         SaveCommand();
+                        break;
+                    case "load":
+                        LoadCommand();
                         break;
                     case "help":
                         HelpCommand();
@@ -93,11 +97,7 @@ namespace PathIndex
 
             try
             {
-                string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                string appFolderPath = Path.Combine(folderPath, "PathIndex");
-                Directory.CreateDirectory(appFolderPath);
-
-                string saveFilePath = Path.Combine(appFolderPath, "pathindex.json");
+                string saveFilePath = FindSavePath();
 
                 string saveData = JsonSerializer.Serialize(saveFileDto, CachedJsonOptions);
                 saveData += Environment.NewLine;
@@ -111,6 +111,62 @@ namespace PathIndex
             }
         }
 
+        private static void LoadCommand()
+        {
+            try
+            {
+                String saveFilePath = FindSavePath();
+                if (File.Exists(saveFilePath))
+                {
+                    VerifyAndLoadSaveFile(saveFilePath);
+                    return;
+                }
+                Console.WriteLine("No save found.\n");
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine("Load failed: could not load file.\n");
+            }
+        }
+
+        private static void VerifyAndLoadSaveFile(string saveFilePath)
+        {
+            string saveFile = File.ReadAllText(saveFilePath);
+            SaveFileDto? saveFileDto = JsonSerializer.Deserialize<SaveFileDto>(saveFile);
+
+            if (saveFileDto is null)
+                Console.WriteLine("Save file invalid.\n");
+            else
+            {
+                lastIssuedId = saveFileDto.LastIssuedId;
+                List<EntryDto> entriesToLoad = saveFileDto.Entries is null ? [] : saveFileDto.Entries;
+
+                entries.Clear();
+                foreach (EntryDto Dtoentry in entriesToLoad)
+                {
+                    List<string> tags = Dtoentry.Tags is null ? [] : Dtoentry.Tags;
+                    Entry entry = new(Dtoentry.Id, Dtoentry.TargetPath, Dtoentry.Name, Dtoentry.Note) { Tags = tags };
+                    entries.Add(entry);
+                }
+                Console.WriteLine("Save loaded.\n");
+            }
+            return;
+        }
+
+        private static string FindSavePath()
+        {
+            string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string appFolderPath = Path.Combine(folderPath, "PathIndex");
+
+            if (!Directory.Exists(appFolderPath))
+            {
+                Directory.CreateDirectory(appFolderPath);
+            }
+
+            string saveFilePath = Path.Combine(appFolderPath, "pathindex.json");
+            return saveFilePath;
+        }
+
         static string[] TokenizeInput(string input)
         {
             string[] tokens = input.Split([' '], StringSplitOptions.RemoveEmptyEntries);
@@ -121,19 +177,21 @@ namespace PathIndex
         static void HelpCommand()
         {
             Console.WriteLine("Commands:");
-            Console.WriteLine("  help                             Show this help");
-            Console.WriteLine("  add <path> [name] [note]         Add an entry (spaces aren't supported in arguments yet)");
+            Console.WriteLine("  help                          Show this help");
+            Console.WriteLine("  add <path> [name] [note]      Add an entry (spaces aren't supported in arguments yet)");
             Console.WriteLine("  remove <id>                   Remove an entry");
             Console.WriteLine("  edit <id> clear-note          Clear the note for an entry");
             Console.WriteLine("  edit <id> <name|note> <value> Edit one field (name/note) for an entry");
             Console.WriteLine("  tag <id> <tag>                Add a tag to an entry");
             Console.WriteLine("  untag <id> <tag>              Remove a tag from an entry");
             Console.WriteLine("  tags <id>                     Show tags for one entry");
-            Console.WriteLine("  find <text>                      List entries containing text");
-            Console.WriteLine("  filter tag <tag>                 List entries with matching tag");
-            Console.WriteLine("  list                             List entries");
+            Console.WriteLine("  find <text>                   List entries containing text");
+            Console.WriteLine("  filter tag <tag>              List entries with matching tag");
+            Console.WriteLine("  list                          List entries");
             Console.WriteLine("  info <id>                     Show full details for one entry");
-            Console.WriteLine("  quit / exit                      Close PathIndex\n");
+            Console.WriteLine("  quit / exit                   Close PathIndex\n");
+            Console.WriteLine("  save                          save PathIndex entries\n");
+            Console.WriteLine("  load                          load PathIndex entries\n");
         }
 
         static void AddCommand(string[] args)
