@@ -55,6 +55,12 @@ namespace PathIndex
                     case "tags":
                         TagsCommand(commandArgs);
                         break;
+                    case "find":
+                        FindCommand(commandArgs);
+                        break;
+                    case "filter":
+                        FilterCommand(commandArgs);
+                        break;
                     case "info":
                         InfoCommand(commandArgs);
                         break;
@@ -83,9 +89,11 @@ namespace PathIndex
             Console.WriteLine("  remove <index>                   Remove an entry");
             Console.WriteLine("  edit <index> clear-note          Clear the note for an entry");
             Console.WriteLine("  edit <index> <name|note> <value> Edit one field (name/note) for an entry");
-            Console.WriteLine("  tag <id> <tag>                   Add a tag to an entry");
-            Console.WriteLine("  untag <id> <tag>                 remove a tag from an entry");
-            Console.WriteLine("  tags <id>                        Show tags for one entry");
+            Console.WriteLine("  tag <index> <tag>                Add a tag to an entry");
+            Console.WriteLine("  untag <index> <tag>              Remove a tag from an entry");
+            Console.WriteLine("  tags <index>                     Show tags for one entry");
+            Console.WriteLine("  find <text>                      List entries containing text");
+            Console.WriteLine("  filter tag <tag>                 List entries with matching tag");
             Console.WriteLine("  list                             List entries");
             Console.WriteLine("  info <index>                     Show full details for one entry");
             Console.WriteLine("  quit / exit                      Close PathIndex\n");
@@ -339,5 +347,65 @@ namespace PathIndex
             Console.WriteLine("Entry " + (index + 1) + " (" + entry.Name + ")" + (entry.Tags.Count != 0 ? "\nTags: " + tags : "\nTags: (None)") + "\n");
         }
 
+        private static void FindCommand(string[] args)
+        {
+            const string usage = "Usage: find <text>\n";
+            if (args.Length != 1)
+            {
+                Console.WriteLine(usage);
+                return;
+            }
+
+            string text = args[0].ToLowerInvariant();
+            List<Entry> found = new List<Entry>();
+            foreach (Entry entry in entries)
+            {
+                if (entry.Name.ToLowerInvariant().Contains(text))
+                {
+                    found.Add(entry);
+                }
+                else if (entry.TargetPath.ToLowerInvariant().Contains(text))
+                {
+                    found.Add(entry);
+                }
+                else if (entry.Note != null && entry.Note.ToLowerInvariant().Contains(text))
+                {
+                    found.Add(entry);
+                }
+            }
+
+            Console.WriteLine(found.Count > 0 ? "Found " + found.Count + " entries matching " + text + "." : "Found 0 entries matching " + text + ".");
+            for (int i = 0; i < found.Count; i++)
+            {
+                Console.WriteLine("Match " + (i + 1) + "/" + found.Count() + " | " + found[i].Name + " | " + found[i].TargetPath + (found[i].Note != null ? " | " + found[i].Note : "") + (found[i].Tags.Count != 0 ? " | (" + found[i].Tags.Count + " tags)" : ""));
+            }
+            Console.WriteLine();
+        }
+
+        private static void FilterCommand(string[] args)
+        {
+            const string usage = "Usage: filter tag <tag>\n";
+            if (args.Length != 2 || args[0].ToLowerInvariant() != "tag")
+            {
+                Console.WriteLine(usage);
+                return;
+            }
+
+            string userTag = args[1].ToLowerInvariant();
+            List<Entry> found = new List<Entry>();
+            foreach (Entry entry in entries)
+            {
+                if (entry.Tags.Contains(userTag)) {
+                    found.Add(entry);
+                }
+            }
+
+            Console.WriteLine(found.Count > 0 ? "Found " + found.Count + " entries matching tag " + userTag + "." : "Found 0 entries matching tag " + userTag + ".");
+            for (int i = 0; i < found.Count; i++)
+            {
+                Console.WriteLine("Match " + (i + 1) + "/" + found.Count + " | " + found[i].Name + " | " + found[i].TargetPath + (found[i].Note != null ? " | " + found[i].Note : "") + (found[i].Tags.Count != 0 ? " | (" + found[i].Tags.Count + " tags)" : ""));
+            }
+            Console.WriteLine();
+        }
     }
 }
