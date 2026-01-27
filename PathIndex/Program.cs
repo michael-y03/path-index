@@ -1,17 +1,18 @@
-﻿
-
-using System;
+﻿using PathIndex.Persistence;
+using System.Text.Json;
 
 namespace PathIndex
 {
     class Program
     {
-        static List<Entry> entries = new List<Entry>();
-        static int lastId = 0;
+        static readonly List<Entry> entries = [];
+        static int lastIssuedId = 0;
 
-        static void Main(string[] args)
+        private static readonly System.Text.Json.JsonSerializerOptions CachedJsonOptions = new() { WriteIndented = true };
+
+        static void Main()
         {
-            Console.WriteLine("PathIndex — id and annotate local folders");
+            Console.WriteLine("PathIndex — index and annotate local folders");
             Console.WriteLine("Type 'help' to see commands.\n");
 
             while (true)
@@ -29,7 +30,7 @@ namespace PathIndex
                 string[] tokens = TokenizeInput(input);
 
                 string command = tokens[0].ToLowerInvariant();
-                string[] commandArgs = tokens.Length > 1 ? tokens[1..] : Array.Empty<string>();
+                string[] commandArgs = tokens.Length > 1 ? tokens[1..] : [];
 
                 switch (command)
                 {
@@ -37,6 +38,9 @@ namespace PathIndex
                         return;
                     case "exit":
                         return;
+                    case "save":
+                        SaveCommand();
+                        break;
                     case "help":
                         HelpCommand();
                         break;
@@ -77,9 +81,39 @@ namespace PathIndex
             }
         }
 
+        private static void SaveCommand()
+        {
+            List<EntryDto> entryDtos = [];
+            foreach (Entry entry in entries)
+            {
+                EntryDto entryDto = new(entry.Id, entry.TargetPath, entry.Name, entry.Note, entry.Tags);
+                entryDtos.Add(entryDto);
+            }
+            SaveFileDto saveFileDto = new(lastIssuedId, entryDtos);
+
+            try
+            {
+                string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                string appFolderPath = Path.Combine(folderPath, "PathIndex");
+                Directory.CreateDirectory(appFolderPath);
+
+                string saveFilePath = Path.Combine(appFolderPath, "pathindex.json");
+
+                string saveData = JsonSerializer.Serialize(saveFileDto, CachedJsonOptions);
+                saveData += Environment.NewLine;
+
+                File.WriteAllText(saveFilePath, saveData);
+                Console.WriteLine("Saved " + entryDtos.Count + " entries to " + saveFilePath + "\n");
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine("Save failed: could not write file. " + e.Message + "\n");
+            }
+        }
+
         static string[] TokenizeInput(string input)
         {
-            string[] tokens = input.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] tokens = input.Split([' '], StringSplitOptions.RemoveEmptyEntries);
 
             return tokens;
         }
@@ -116,8 +150,7 @@ namespace PathIndex
 
             if (TryGetDefaultNameFromPath(args[0]) is string n)
             {
-                if (name is null)
-                    name = n;
+                name ??= n;
             }
             else
             {
@@ -125,8 +158,8 @@ namespace PathIndex
                 return;
             }
             string? note = args.Length > 2 ? args[2] : null;
-            lastId += 1;
-            Entry e = new Entry(lastId, args[0], name, note);
+            lastIssuedId += 1;
+            Entry e = new(lastIssuedId, args[0], name, note);
             entries.Add(e);
             Console.WriteLine("Added: " + e.Name + "\n");
         }
@@ -137,7 +170,7 @@ namespace PathIndex
                 return Path.GetPathRoot(path);
 
             while (path.EndsWith('/') || path.EndsWith('\\'))
-                path = path.Remove(path.Length - 1);
+                path = path[..^1];
 
             string? folderName;
             if (Directory.Exists(path))
@@ -243,7 +276,7 @@ namespace PathIndex
 
         private static void UpdateNote(Entry entry, string newNote)
         {
-            string originalNote = "(" + (entry.Note == null ? "none" : entry.Note) + ")";
+            string originalNote = "(" + (entry.Note ?? "none") + ")";
             entry.Note = newNote;
             Console.WriteLine("Updated note: " + originalNote + " -> " + newNote + "\n");
         }
@@ -275,13 +308,13 @@ namespace PathIndex
                 return null;
             }
 
-            for (int i=0; i<entries.Count; i++)
+            for (int i = 0; i < entries.Count; i++)
             {
                 if (entries[i].Id == id)
                     return i;
             }
-                Console.WriteLine("No entry at " + id + ". Use 'list' to see valid IDs.\n");
-                return null;
+            Console.WriteLine("No entry at " + id + ". Use 'list' to see valid IDs.\n");
+            return null;
         }
 
         private static void TagCommand(string[] args)
@@ -323,13 +356,10 @@ namespace PathIndex
                 return;
 
             Entry entry = entries[index];
-
             string tag = args[1].ToLowerInvariant();
-            if (entry.Tags.Contains(tag))
-            {
-                entry.Tags.Remove(tag);
+
+            if (entry.Tags.Remove(tag))
                 Console.WriteLine("Entry " + entry.Id + " (" + entry.Name + ") removed Tag: " + tag + "\n");
-            }
             else
                 Console.WriteLine("Tag: " + tag + " not found" + " on entry " + entry.Id + ".\n");
         }
@@ -363,18 +393,18 @@ namespace PathIndex
             }
 
             string text = args[0].ToLowerInvariant();
-            List<Entry> found = new List<Entry>();
+            List<Entry> found = [];
             foreach (Entry entry in entries)
             {
-                if (entry.Name.ToLowerInvariant().Contains(text))
+                if (entry.Name.Contains(text, StringComparison.InvariantCultureIgnoreCase))
                 {
                     found.Add(entry);
                 }
-                else if (entry.TargetPath.ToLowerInvariant().Contains(text))
+                else if (entry.TargetPath.Contains(text, StringComparison.InvariantCultureIgnoreCase))
                 {
                     found.Add(entry);
                 }
-                else if (entry.Note != null && entry.Note.ToLowerInvariant().Contains(text))
+                else if (entry.Note != null && entry.Note.Contains(text, StringComparison.InvariantCultureIgnoreCase))
                 {
                     found.Add(entry);
                 }
@@ -391,17 +421,18 @@ namespace PathIndex
         private static void FilterCommand(string[] args)
         {
             const string usage = "Usage: filter tag <tag>\n";
-            if (args.Length != 2 || args[0].ToLowerInvariant() != "tag")
+            if (args.Length != 2 || !args[0].Equals("tag", StringComparison.InvariantCultureIgnoreCase))
             {
                 Console.WriteLine(usage);
                 return;
             }
 
             string userTag = args[1].ToLowerInvariant();
-            List<Entry> found = new List<Entry>();
+            List<Entry> found = [];
             foreach (Entry entry in entries)
             {
-                if (entry.Tags.Contains(userTag)) {
+                if (entry.Tags.Contains(userTag))
+                {
                     found.Add(entry);
                 }
             }

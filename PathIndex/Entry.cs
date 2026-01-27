@@ -7,6 +7,6 @@ namespace PathIndex
         public string TargetPath { get; } = targetPath;
         public string Name { get; set; } = name;
         public string? Note { get; set; } = note;
-        public List<String> Tags { get; set; } = new List<string>();
+        public List<String> Tags { get; set; } = [];
     }
 }
