@@ -1,20 +1,12 @@
 ﻿
 namespace PathIndex
 {
-    internal class Entry
+    internal class Entry(int id, string targetPath, string name, string? note)
     {
-
-        public Entry(string targetPath, string name, string? note)
-        {
-            TargetPath = targetPath;
-            Name = name;
-            Note = note;
-            Tags = new List<string>();
-        }
-
-        public string TargetPath { get; }
-        public string Name { get; set; }
-        public string? Note { get; set; }
-        public List<String> Tags { get; set; }
+        public int Id { get; } = id;
+        public string TargetPath { get; } = targetPath;
+        public string Name { get; set; } = name;
+        public string? Note { get; set; } = note;
+        public List<String> Tags { get; set; } = new List<string>();
     }
 }

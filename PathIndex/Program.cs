@@ -1,14 +1,17 @@
 ﻿
 
+using System;
+
 namespace PathIndex
 {
     class Program
     {
         static List<Entry> entries = new List<Entry>();
+        static int lastId = 0;
 
         static void Main(string[] args)
         {
-            Console.WriteLine("PathIndex — index and annotate local folders");
+            Console.WriteLine("PathIndex — id and annotate local folders");
             Console.WriteLine("Type 'help' to see commands.\n");
 
             while (true)
@@ -86,16 +89,16 @@ namespace PathIndex
             Console.WriteLine("Commands:");
             Console.WriteLine("  help                             Show this help");
             Console.WriteLine("  add <path> [name] [note]         Add an entry (spaces aren't supported in arguments yet)");
-            Console.WriteLine("  remove <index>                   Remove an entry");
-            Console.WriteLine("  edit <index> clear-note          Clear the note for an entry");
-            Console.WriteLine("  edit <index> <name|note> <value> Edit one field (name/note) for an entry");
-            Console.WriteLine("  tag <index> <tag>                Add a tag to an entry");
-            Console.WriteLine("  untag <index> <tag>              Remove a tag from an entry");
-            Console.WriteLine("  tags <index>                     Show tags for one entry");
+            Console.WriteLine("  remove <id>                   Remove an entry");
+            Console.WriteLine("  edit <id> clear-note          Clear the note for an entry");
+            Console.WriteLine("  edit <id> <name|note> <value> Edit one field (name/note) for an entry");
+            Console.WriteLine("  tag <id> <tag>                Add a tag to an entry");
+            Console.WriteLine("  untag <id> <tag>              Remove a tag from an entry");
+            Console.WriteLine("  tags <id>                     Show tags for one entry");
             Console.WriteLine("  find <text>                      List entries containing text");
             Console.WriteLine("  filter tag <tag>                 List entries with matching tag");
             Console.WriteLine("  list                             List entries");
-            Console.WriteLine("  info <index>                     Show full details for one entry");
+            Console.WriteLine("  info <id>                     Show full details for one entry");
             Console.WriteLine("  quit / exit                      Close PathIndex\n");
         }
 
@@ -122,7 +125,8 @@ namespace PathIndex
                 return;
             }
             string? note = args.Length > 2 ? args[2] : null;
-            Entry e = new Entry(args[0], name, note);
+            lastId += 1;
+            Entry e = new Entry(lastId, args[0], name, note);
             entries.Add(e);
             Console.WriteLine("Added: " + e.Name + "\n");
         }
@@ -155,43 +159,44 @@ namespace PathIndex
         {
             for (int i = 0; i < entries.Count; i++)
             {
-                Console.WriteLine(i + 1 + " | " + entries[i].Name + " | " + entries[i].TargetPath + (entries[i].Note != null ? " | " + entries[i].Note : "") + (entries[i].Tags.Count != 0 ? " | (" + entries[i].Tags.Count + " tags)" : ""));
+                Console.WriteLine(entries[i].Id + " | " + entries[i].Name + " | " + entries[i].TargetPath + (entries[i].Note != null ? " | " + entries[i].Note : "") + (entries[i].Tags.Count != 0 ? " | (" + entries[i].Tags.Count + " tags)" : ""));
             }
             Console.WriteLine();
         }
 
         private static void InfoCommand(string[] args)
         {
-            int? nullableIndex = TryGetEntryZeroBasedIndex(args, "Usage: info <index>");
+            int? nullableIndex = TryGetEntryIndexById(args, "Usage: info <id>");
             if (nullableIndex is int index)
             {
                 Entry entry = entries[index];
                 string tags = string.Join(", ", entry.Tags);
-                Console.WriteLine("Entry " + (index + 1) + "\nName: " + entry.Name + "\nPath: " + entry.TargetPath + (entry.Note != null ? "\nNote: " + entry.Note : "") + (entry.Tags.Count != 0 ? "\nTags: " + tags : "") + "\n");
+                Console.WriteLine("Entry " + entry.Id + "\nName: " + entry.Name + "\nPath: " + entry.TargetPath + (entry.Note != null ? "\nNote: " + entry.Note : "") + (entry.Tags.Count != 0 ? "\nTags: " + tags : "") + "\n");
             }
         }
 
         private static void RemoveCommand(string[] args)
         {
-            int? nullableIndex = TryGetEntryZeroBasedIndex(args, "Usage: remove <index>");
+            int? nullableIndex = TryGetEntryIndexById(args, "Usage: remove <id>");
             if (nullableIndex is int index)
             {
                 string removedName = entries[index].Name;
+                int removedId = entries[index].Id;
                 entries.RemoveAt(index);
-                Console.WriteLine("Removed entry " + (index + 1) + ": " + removedName + "\n");
+                Console.WriteLine("Removed entry " + removedId + ": " + removedName + "\n");
             }
         }
 
         private static void EditCommand(string[] args)
         {
-            const string usage = "Usage: edit <index> name <value>\n       edit <index> note <value>\n       edit <index> clear-note\n";
+            const string usage = "Usage: edit <id> name <value>\n       edit <id> note <value>\n       edit <id> clear-note\n";
             if (args.Length < 2)
             {
                 Console.WriteLine(usage);
                 return;
             }
 
-            int? nullableIndex = TryGetEntryZeroBasedIndex(args, usage);
+            int? nullableIndex = TryGetEntryIndexById(args, usage);
             if (nullableIndex is not int index)
                 return;
             Entry entry = entries[index];
@@ -250,7 +255,7 @@ namespace PathIndex
             Console.WriteLine(originalNote == null ? "Nothing to clear.\n" : "Cleared note: (" + originalNote + ")\n");
         }
 
-        private static int? TryGetEntryZeroBasedIndex(string[] args, string usage)
+        private static int? TryGetEntryIndexById(string[] args, string usage)
         {
             if (entries.Count == 0)
             {
@@ -260,34 +265,35 @@ namespace PathIndex
 
             if (args.Length == 0)
             {
-                Console.WriteLine(usage + "\nIndex must be a number between 1 and " + entries.Count + ".\n");
+                Console.WriteLine(usage + "\n");
                 return null;
             }
 
-            if (!int.TryParse(args[0], out int index))
+            if (!int.TryParse(args[0], out int id))
             {
-                Console.WriteLine("Invalid index: '" + args[0] + "'.\nIndex must be a number.\n");
+                Console.WriteLine("Invalid id: '" + args[0] + "'.\nid must be a number.\n");
                 return null;
             }
 
-            if (index < 1 || index > entries.Count)
+            for (int i=0; i<entries.Count; i++)
             {
-                Console.WriteLine("Index out of range. Valid range: 1–" + entries.Count + ".\nNo entry at " + index + ". Use 'list' to see valid indices.\n");
-                return null;
+                if (entries[i].Id == id)
+                    return i;
             }
-            return index - 1;
+                Console.WriteLine("No entry at " + id + ". Use 'list' to see valid IDs.\n");
+                return null;
         }
 
         private static void TagCommand(string[] args)
         {
-            const string usage = "Usage: tag <index> <tag>\n";
+            const string usage = "Usage: tag <id> <tag>\n";
             if (args.Length != 2)
             {
                 Console.WriteLine(usage);
                 return;
             }
 
-            int? nullableIndex = TryGetEntryZeroBasedIndex(args, usage);
+            int? nullableIndex = TryGetEntryIndexById(args, usage);
             if (nullableIndex is not int index)
                 return;
 
@@ -297,22 +303,22 @@ namespace PathIndex
             if (!entry.Tags.Contains(tag))
             {
                 entry.Tags.Add(tag);
-                Console.WriteLine("Entry " + (index + 1) + " (" + entry.Name + ") added Tag: " + tag + "\n");
+                Console.WriteLine("Entry " + entry.Id + " (" + entry.Name + ") added Tag: " + tag + "\n");
             }
             else
-                Console.WriteLine("Tag: " + tag + " already exists" + " on entry " + (index + 1) + ".\n");
+                Console.WriteLine("Tag: " + tag + " already exists" + " on entry " + entry.Id + ".\n");
         }
 
         private static void UntagCommand(string[] args)
         {
-            const string usage = "Usage: untag <index> <tag>\n";
+            const string usage = "Usage: untag <id> <tag>\n";
             if (args.Length != 2)
             {
                 Console.WriteLine(usage);
                 return;
             }
 
-            int? nullableIndex = TryGetEntryZeroBasedIndex(args, usage);
+            int? nullableIndex = TryGetEntryIndexById(args, usage);
             if (nullableIndex is not int index)
                 return;
 
@@ -322,29 +328,29 @@ namespace PathIndex
             if (entry.Tags.Contains(tag))
             {
                 entry.Tags.Remove(tag);
-                Console.WriteLine("Entry " + (index + 1) + " (" + entry.Name + ") removed Tag: " + tag + "\n");
+                Console.WriteLine("Entry " + entry.Id + " (" + entry.Name + ") removed Tag: " + tag + "\n");
             }
             else
-                Console.WriteLine("Tag: " + tag + " not found" + " on entry " + (index + 1) + ".\n");
+                Console.WriteLine("Tag: " + tag + " not found" + " on entry " + entry.Id + ".\n");
         }
 
         private static void TagsCommand(string[] args)
         {
-            const string usage = "Usage: tags <index>\n";
+            const string usage = "Usage: tags <id>\n";
             if (args.Length != 1)
             {
                 Console.WriteLine(usage);
                 return;
             }
 
-            int? nullableIndex = TryGetEntryZeroBasedIndex(args, usage);
+            int? nullableIndex = TryGetEntryIndexById(args, usage);
             if (nullableIndex is not int index)
                 return;
 
             Entry entry = entries[index];
 
             string tags = string.Join(", ", entry.Tags);
-            Console.WriteLine("Entry " + (index + 1) + " (" + entry.Name + ")" + (entry.Tags.Count != 0 ? "\nTags: " + tags : "\nTags: (None)") + "\n");
+            Console.WriteLine("Entry " + entry.Id + " (" + entry.Name + ")" + (entry.Tags.Count != 0 ? "\nTags: " + tags : "\nTags: (None)") + "\n");
         }
 
         private static void FindCommand(string[] args)
@@ -377,7 +383,7 @@ namespace PathIndex
             Console.WriteLine(found.Count > 0 ? "Found " + found.Count + " entries matching " + text + "." : "Found 0 entries matching " + text + ".");
             for (int i = 0; i < found.Count; i++)
             {
-                Console.WriteLine("Match " + (i + 1) + "/" + found.Count() + " | " + found[i].Name + " | " + found[i].TargetPath + (found[i].Note != null ? " | " + found[i].Note : "") + (found[i].Tags.Count != 0 ? " | (" + found[i].Tags.Count + " tags)" : ""));
+                Console.WriteLine("Entry " + found[i].Id + " | " + found[i].Name + " | " + found[i].TargetPath + (found[i].Note != null ? " | " + found[i].Note : "") + (found[i].Tags.Count != 0 ? " | (" + found[i].Tags.Count + " tags)" : ""));
             }
             Console.WriteLine();
         }
@@ -403,7 +409,7 @@ namespace PathIndex
             Console.WriteLine(found.Count > 0 ? "Found " + found.Count + " entries matching tag " + userTag + "." : "Found 0 entries matching tag " + userTag + ".");
             for (int i = 0; i < found.Count; i++)
             {
-                Console.WriteLine("Match " + (i + 1) + "/" + found.Count + " | " + found[i].Name + " | " + found[i].TargetPath + (found[i].Note != null ? " | " + found[i].Note : "") + (found[i].Tags.Count != 0 ? " | (" + found[i].Tags.Count + " tags)" : ""));
+                Console.WriteLine("Entry " + found[i].Id + " | " + found[i].Name + " | " + found[i].TargetPath + (found[i].Note != null ? " | " + found[i].Note : "") + (found[i].Tags.Count != 0 ? " | (" + found[i].Tags.Count + " tags)" : ""));
             }
             Console.WriteLine();
         }
