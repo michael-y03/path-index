@@ -123,7 +123,7 @@ namespace PathIndex
                 }
                 Console.WriteLine("No save found.\n");
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Console.Error.WriteLine("Load failed: could not load file.\n");
             }
@@ -169,16 +169,46 @@ namespace PathIndex
 
         static string[] TokenizeInput(string input)
         {
-            string[] tokens = input.Split([' '], StringSplitOptions.RemoveEmptyEntries);
+            List<string> tokens = [];
+            bool insideQuotedArgument = false;
+            bool tokenInProgress = false;
+            string argument = "";
+            foreach (char character in input)
+            {
 
-            return tokens;
+                if (character == '\"')
+                {
+                    insideQuotedArgument = !insideQuotedArgument;
+                    tokenInProgress = true;
+                }
+                if (insideQuotedArgument && character != '\"')
+                    argument += character;
+                else if (tokenInProgress && character == ' ' && !insideQuotedArgument)
+                {
+                    tokens.Add(argument);
+                    argument = "";
+                    tokenInProgress = false;
+                }
+                else if (character != '\"' && character != ' ')
+                {
+                    argument += character;
+                    tokenInProgress = true;
+                }
+            }
+            if (!insideQuotedArgument && tokenInProgress)
+                tokens.Add(argument);
+            else
+                Console.WriteLine("Quoted argument error. \n");
+
+            string[] allTokens = [.. tokens];
+            return allTokens;
         }
 
         static void HelpCommand()
         {
             Console.WriteLine("Commands:");
             Console.WriteLine("  help                          Show this help");
-            Console.WriteLine("  add <path> [name] [note]      Add an entry (spaces aren't supported in arguments yet)");
+            Console.WriteLine("  add <path> [name] [note]      Add an entry");
             Console.WriteLine("  remove <id>                   Remove an entry");
             Console.WriteLine("  edit <id> clear-note          Clear the note for an entry");
             Console.WriteLine("  edit <id> <name|note> <value> Edit one field (name/note) for an entry");
@@ -198,7 +228,7 @@ namespace PathIndex
         {
             if (args.Length == 0 || args.Length > 3)
             {
-                Console.WriteLine("Usage: add <path> [name] [note]\nNote: spaces aren’t supported in arguments yet.\n");
+                Console.WriteLine("Usage: add <path> [name] [note]\n");
                 return;
             }
             string? name = null;
