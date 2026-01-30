@@ -29,58 +29,60 @@ namespace PathIndex
                 }
 
                 string[] tokens = TokenizeInput(input);
-
-                string command = tokens[0].ToLowerInvariant();
-                string[] commandArgs = tokens.Length > 1 ? tokens[1..] : [];
-
-                switch (command)
+                if (tokens.Length > 0)
                 {
-                    case "quit":
-                        return;
-                    case "exit":
-                        return;
-                    case "save":
-                        SaveCommand();
-                        break;
-                    case "load":
-                        LoadCommand();
-                        break;
-                    case "help":
-                        HelpCommand();
-                        break;
-                    case "add":
-                        AddCommand(commandArgs);
-                        break;
-                    case "remove":
-                        RemoveCommand(commandArgs);
-                        break;
-                    case "edit":
-                        EditCommand(commandArgs);
-                        break;
-                    case "tag":
-                        TagCommand(commandArgs);
-                        break;
-                    case "untag":
-                        UntagCommand(commandArgs);
-                        break;
-                    case "tags":
-                        TagsCommand(commandArgs);
-                        break;
-                    case "find":
-                        FindCommand(commandArgs);
-                        break;
-                    case "filter":
-                        FilterCommand(commandArgs);
-                        break;
-                    case "info":
-                        InfoCommand(commandArgs);
-                        break;
-                    case "list":
-                        ListCommand();
-                        break;
-                    default:
-                        Console.WriteLine("Unknown command: '" + command + "'. Type 'help' to see available commands.\n");
-                        break;
+                    string command = tokens[0].ToLowerInvariant();
+                    string[] commandArgs = tokens.Length > 1 ? tokens[1..] : [];
+
+                    switch (command)
+                    {
+                        case "quit":
+                            return;
+                        case "exit":
+                            return;
+                        case "save":
+                            SaveCommand();
+                            break;
+                        case "load":
+                            LoadCommand();
+                            break;
+                        case "help":
+                            HelpCommand();
+                            break;
+                        case "add":
+                            AddCommand(commandArgs);
+                            break;
+                        case "remove":
+                            RemoveCommand(commandArgs);
+                            break;
+                        case "edit":
+                            EditCommand(commandArgs);
+                            break;
+                        case "tag":
+                            TagCommand(commandArgs);
+                            break;
+                        case "untag":
+                            UntagCommand(commandArgs);
+                            break;
+                        case "tags":
+                            TagsCommand(commandArgs);
+                            break;
+                        case "find":
+                            FindCommand(commandArgs);
+                            break;
+                        case "filter":
+                            FilterCommand(commandArgs);
+                            break;
+                        case "info":
+                            InfoCommand(commandArgs);
+                            break;
+                        case "list":
+                            ListCommand();
+                            break;
+                        default:
+                            Console.WriteLine("Unknown command: '" + command + "'. Type 'help' to see available commands.\n");
+                            break;
+                    }
                 }
             }
         }
@@ -183,13 +185,13 @@ namespace PathIndex
                 }
                 if (insideQuotedArgument && character != '\"')
                     argument += character;
-                else if (tokenInProgress && character == ' ' && !insideQuotedArgument)
+                else if (tokenInProgress && char.IsWhiteSpace(character) && !insideQuotedArgument)
                 {
                     tokens.Add(argument);
                     argument = "";
                     tokenInProgress = false;
                 }
-                else if (character != '\"' && character != ' ')
+                else if (character != '\"' && !char.IsWhiteSpace(character))
                 {
                     argument += character;
                     tokenInProgress = true;
@@ -198,7 +200,10 @@ namespace PathIndex
             if (!insideQuotedArgument && tokenInProgress)
                 tokens.Add(argument);
             else
+            {
                 Console.WriteLine("Quoted argument error. \n");
+                return [];
+            }
 
             string[] allTokens = [.. tokens];
             return allTokens;
