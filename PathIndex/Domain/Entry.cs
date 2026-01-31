@@ -1,5 +1,4 @@
-﻿
-namespace PathIndex
+﻿namespace PathIndex.Domain
 {
     internal class Entry(int id, string targetPath, string name, string? note)
     {

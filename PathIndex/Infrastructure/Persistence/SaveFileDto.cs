@@ -1,5 +1,4 @@
-﻿
-namespace PathIndex.Persistence
+﻿namespace PathIndex.Infrastructure.Persistence
 {
     internal class SaveFileDto(int lastIssuedId, List<EntryDto> entries)
     {

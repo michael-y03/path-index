@@ -1,5 +1,4 @@
-﻿
-namespace PathIndex.Persistence
+﻿namespace PathIndex.Infrastructure.Persistence
 {
     internal class EntryDto(int id, string targetPath, string name, string? note, List<string> tags)
     {
