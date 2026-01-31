@@ -2,7 +2,7 @@
 {
     internal static class HelpCommand
     {
-        public static void Execute()
+        public static void Execute(string[] args, AppState appState)
         {
             Console.WriteLine("Commands:");
             Console.WriteLine("  help                          Show this help");

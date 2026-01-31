@@ -7,7 +7,7 @@ namespace PathIndex.Application.Commands
     internal static class SaveCommand
     {
         private static readonly JsonSerializerOptions CachedJsonOptions = new() { WriteIndented = true };
-        public static void Execute(AppState appState)
+        public static void Execute(string[] args, AppState appState)
         {
             List<EntryDto> entryDtos = [];
             foreach (Entry entry in appState.Entries)

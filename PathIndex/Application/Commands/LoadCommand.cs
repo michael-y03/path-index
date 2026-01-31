@@ -6,7 +6,7 @@ namespace PathIndex.Application.Commands
 {
     internal static class LoadCommand
     {
-        public static void Execute(AppState appState)
+        public static void Execute(string[] args, AppState appState)
         {
             try
             {

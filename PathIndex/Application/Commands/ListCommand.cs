@@ -3,7 +3,7 @@ namespace PathIndex.Application.Commands
 {
     internal static class ListCommand
     {
-        public static void Execute(AppState appState)
+        public static void Execute(string[] args, AppState appState)
         {
             for (int i = 0; i < appState.Entries.Count; i++)
             {
