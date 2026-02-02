@@ -4,7 +4,7 @@ namespace PathIndex.Application.Commands
 {
     internal static class RemoveCommand
     {
-        public static void Execute(string[] args, AppState appState)
+        public static CommandResult Execute(string[] args, AppState appState)
         {
             int? nullableIndex = EntryIdHelpers.TryGetEntryIndexById(args, "Usage: remove <id>", appState);
             if (nullableIndex is int index)

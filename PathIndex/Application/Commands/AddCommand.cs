@@ -5,7 +5,7 @@ namespace PathIndex.Application.Commands
 {
     internal static class AddCommand
     {
-        public static void Execute(string[] args, AppState appState)
+        public static CommandResult Execute(string[] args, AppState appState)
         {
             if (args.Length == 0 || args.Length > 3)
             {

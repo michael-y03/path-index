@@ -2,7 +2,7 @@
 using PathIndex.Application.Commands;
 using PathIndex.Application.Parsing;
 
-namespace PathIndex
+namespace PathIndex.Cli
 {
     class Program
     {

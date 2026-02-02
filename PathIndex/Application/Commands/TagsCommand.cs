@@ -5,7 +5,7 @@ namespace PathIndex.Application.Commands
 {
     internal static class TagsCommand
     {
-        public static void Execute(string[] args, AppState appState)
+        public static CommandResult Execute(string[] args, AppState appState)
         {
             const string usage = "Usage: tags <id>\n";
             if (args.Length != 1)

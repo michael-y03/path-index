@@ -4,7 +4,7 @@ namespace PathIndex.Application.Commands
 {
     internal static class FindCommand
     {
-        public static void Execute(string[] args, AppState appState)
+        public static CommandResult Execute(string[] args, AppState appState)
         {
             const string usage = "Usage: find <text>\n";
             if (args.Length != 1)

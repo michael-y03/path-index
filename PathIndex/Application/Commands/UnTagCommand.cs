@@ -5,7 +5,7 @@ namespace PathIndex.Application.Commands
 {
     internal static class UntagCommand
     {
-        public static void Execute(string[] args, AppState appState)
+        public static CommandResult Execute(string[] args, AppState appState)
         {
             const string usage = "Usage: untag <id> <tag>\n";
             if (args.Length != 2)

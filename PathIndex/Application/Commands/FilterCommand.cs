@@ -4,7 +4,7 @@ namespace PathIndex.Application.Commands
 {
     internal static class FilterCommand
     {
-        public static void Execute(string[] args, AppState appState)
+        public static CommandResult Execute(string[] args, AppState appState)
         {
             const string usage = "Usage: filter tag <tag>\n";
             if (args.Length != 2 || !args[0].Equals("tag", StringComparison.InvariantCultureIgnoreCase))

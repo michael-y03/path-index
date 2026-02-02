@@ -6,7 +6,7 @@ namespace PathIndex.Application.Commands
 {
     internal static class EditCommand
     {
-        public static void Execute(string[] args, AppState appState)
+        public static CommandResult Execute(string[] args, AppState appState)
         {
             const string usage = "Usage: edit <id> name <value>\n       edit <id> note <value>\n       edit <id> clear-note\n";
             if (args.Length < 2)
