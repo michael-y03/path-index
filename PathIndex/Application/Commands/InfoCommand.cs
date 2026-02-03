@@ -1,4 +1,5 @@
 ﻿using PathIndex.Application.Commands.CommandHelpers;
+using PathIndex.Application.Commands.CommonHelpers;
 using PathIndex.Domain;
 
 namespace PathIndex.Application.Commands
@@ -7,13 +8,24 @@ namespace PathIndex.Application.Commands
     {
         public static CommandResult Execute(string[] args, AppState appState)
         {
-            int? nullableIndex = EntryIdHelpers.TryGetEntryIndexById(args, "Usage: info <id>", appState);
-            if (nullableIndex is int index)
+            EntryIdLookupResult result = EntryIdHelpers.TryGetEntryIndexById(args, "Usage: info <id>", appState);
+            if (result.Index is int index)
             {
                 Entry entry = appState.Entries[index];
                 string tags = string.Join(", ", entry.Tags);
-                Console.WriteLine("Entry " + entry.Id + "\nName: " + entry.Name + "\nPath: " + entry.TargetPath + (entry.Note != null ? "\nNote: " + entry.Note : "") + (entry.Tags.Count != 0 ? "\nTags: " + tags : "") + "\n");
+                List<string> resultLines =
+                [
+                    "Entry " + entry.Id,
+                    "Name: " + entry.Name,
+                    "Path: " + entry.TargetPath
+                ];
+                if (entry.Note != null)
+                    resultLines.Add("Note: " + entry.Note);
+                if (entry.Tags.Count != 0)
+                    resultLines.Add("Tags: " + tags);
+                return new CommandResult(true, resultLines);
             }
+            return new CommandResult(false, result.Lines);
         }
     }
 }

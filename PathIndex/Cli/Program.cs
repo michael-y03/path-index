@@ -27,8 +27,9 @@ namespace PathIndex.Cli
                 }
 
                 string[] tokens = Tokenizer.TokenizeInput(input);
-                bool shouldExit = CommandDispatcher.Dispatch(tokens, appState);
-                if (shouldExit)
+                CommandResult result = CommandDispatcher.Dispatch(tokens, appState);
+                ConsoleRenderer.Render(result);
+                if (result.ShouldExit)
                     break;
             }
         }
