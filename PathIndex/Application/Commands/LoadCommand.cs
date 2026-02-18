@@ -10,42 +10,43 @@ namespace PathIndex.Application.Commands
         {
             try
             {
-                String saveFilePath = SaveFilePaths.GetDefaultSaveFilePath();
+                string saveFilePath = SaveFilePaths.GetDefaultSaveFilePath();
                 if (File.Exists(saveFilePath))
                 {
-                    VerifyAndLoadSaveFile(saveFilePath, appState);
-                    return;
+                    bool success = VerifyAndLoadSaveFile(saveFilePath, appState);
+                    if (success)
+                        return new CommandResult(true, ["Save loaded."]);
+                    return new CommandResult(false, ["Save file invalid."]);
                 }
-                Console.WriteLine("No save found.\n");
+                return new CommandResult(true, ["No save found."]);
             }
             catch (Exception)
             {
-                Console.Error.WriteLine("Load failed: could not load file.\n");
+                return new CommandResult(false, ["Load failed: could not load file."]);
             }
         }
 
-        private static void VerifyAndLoadSaveFile(string saveFilePath, AppState appState)
+        private static bool VerifyAndLoadSaveFile(string saveFilePath, AppState appState)
         {
             string saveFile = File.ReadAllText(saveFilePath);
             SaveFileDto? saveFileDto = JsonSerializer.Deserialize<SaveFileDto>(saveFile);
 
             if (saveFileDto is null)
-                Console.WriteLine("Save file invalid.\n");
+                return false;
             else
             {
                 List<EntryDto> entriesToLoad = saveFileDto.Entries is null ? [] : saveFileDto.Entries;
                 List<Entry> loadedEntries = [];
 
-                foreach (EntryDto Dtoentry in entriesToLoad)
+                foreach (EntryDto dtoEntry in entriesToLoad)
                 {
-                    List<string> tags = Dtoentry.Tags is null ? [] : Dtoentry.Tags;
-                    Entry entry = new(Dtoentry.Id, Dtoentry.TargetPath, Dtoentry.Name, Dtoentry.Note) { Tags = tags };
+                    List<string> tags = dtoEntry.Tags is null ? [] : dtoEntry.Tags;
+                    Entry entry = new(dtoEntry.Id, dtoEntry.TargetPath, dtoEntry.Name, dtoEntry.Note) { Tags = tags };
                     loadedEntries.Add(entry);
                 }
                 appState.ReplaceState(saveFileDto.LastIssuedId, loadedEntries);
-                Console.WriteLine("Save loaded.\n");
+                return true;
             }
-            return;
         }
     }
 }

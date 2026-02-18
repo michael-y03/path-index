@@ -6,11 +6,10 @@ namespace PathIndex.Application.Commands
     {
         public static CommandResult Execute(string[] args, AppState appState)
         {
-            const string usage = "Usage: filter tag <tag>\n";
+            const string usage = "Usage: filter tag <tag>";
             if (args.Length != 2 || !args[0].Equals("tag", StringComparison.InvariantCultureIgnoreCase))
             {
-                Console.WriteLine(usage);
-                return;
+                return new CommandResult(false, [usage]);
             }
 
             string userTag = args[1].ToLowerInvariant();
@@ -23,12 +22,13 @@ namespace PathIndex.Application.Commands
                 }
             }
 
-            Console.WriteLine(found.Count > 0 ? "Found " + found.Count + " entries matching tag " + userTag + "." : "Found 0 entries matching tag " + userTag + ".");
+            List<string> resultLines = [];
+            resultLines.Add(found.Count > 0 ? "Found " + found.Count + " entries matching tag " + userTag + "." : "Found 0 entries matching tag " + userTag + ".");
             for (int i = 0; i < found.Count; i++)
             {
-                Console.WriteLine("Entry " + found[i].Id + " | " + found[i].Name + " | " + found[i].TargetPath + (found[i].Note != null ? " | " + found[i].Note : "") + (found[i].Tags.Count != 0 ? " | (" + found[i].Tags.Count + " tags)" : ""));
+                resultLines.Add("Entry " + found[i].Id + " | " + found[i].Name + " | " + found[i].TargetPath + (found[i].Note != null ? " | " + found[i].Note : "") + (found[i].Tags.Count != 0 ? " | (" + found[i].Tags.Count + " tags)" : ""));
             }
-            Console.WriteLine();
+            return new CommandResult(true, resultLines);
         }
     }
 }

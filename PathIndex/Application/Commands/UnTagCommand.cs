@@ -1,4 +1,5 @@
 ﻿using PathIndex.Application.Commands.CommandHelpers;
+using PathIndex.Application.Commands.CommonHelpers;
 using PathIndex.Domain;
 
 namespace PathIndex.Application.Commands
@@ -7,24 +8,23 @@ namespace PathIndex.Application.Commands
     {
         public static CommandResult Execute(string[] args, AppState appState)
         {
-            const string usage = "Usage: untag <id> <tag>\n";
+            const string usage = "Usage: untag <id> <tag>";
             if (args.Length != 2)
             {
-                Console.WriteLine(usage);
-                return;
+                return new CommandResult(false, [usage]);
             }
 
-            int? nullableIndex = EntryIdHelpers.TryGetEntryIndexById(args, usage, appState);
-            if (nullableIndex is not int index)
-                return;
+            EntryIdLookupResult result = EntryIdHelpers.TryGetEntryIndexById(args, [usage], appState);
+            if (result.Index is not int index)
+                return new CommandResult(false, result.Lines);
 
             Entry entry = appState.Entries[index];
             string tag = args[1].ToLowerInvariant();
 
             if (entry.Tags.Remove(tag))
-                Console.WriteLine("Entry " + entry.Id + " (" + entry.Name + ") removed Tag: " + tag + "\n");
+                return new CommandResult(true, ["Entry " + entry.Id + " (" + entry.Name + ") removed tag: " + tag]);
             else
-                Console.WriteLine("Tag: " + tag + " not found" + " on entry " + entry.Id + ".\n");
+                return new CommandResult(true, ["Tag: " + tag + " not found" + " on entry " + entry.Id]);
         }
     }
 }

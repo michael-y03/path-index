@@ -25,11 +25,11 @@ namespace PathIndex.Application.Commands
                 saveData += Environment.NewLine;
 
                 File.WriteAllText(saveFilePath, saveData);
-                Console.WriteLine("Saved " + entryDtos.Count + " entries to " + saveFilePath + "\n");
+                return new CommandResult(true, ["Saved " + entryDtos.Count + " entries to " + saveFilePath]);
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine("Save failed: could not write file. " + e.Message + "\n");
+                return new CommandResult(false, ["Save failed: could not write file. " + e.Message]);
             }
         }
     }

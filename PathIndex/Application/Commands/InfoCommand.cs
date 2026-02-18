@@ -8,7 +8,7 @@ namespace PathIndex.Application.Commands
     {
         public static CommandResult Execute(string[] args, AppState appState)
         {
-            EntryIdLookupResult result = EntryIdHelpers.TryGetEntryIndexById(args, "Usage: info <id>", appState);
+            EntryIdLookupResult result = EntryIdHelpers.TryGetEntryIndexById(args, ["Usage: info <id>"], appState);
             if (result.Index is int index)
             {
                 Entry entry = appState.Entries[index];

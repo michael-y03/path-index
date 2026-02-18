@@ -1,6 +1,7 @@
 ﻿
-using PathIndex.Domain;
 using PathIndex.Application.Commands.CommandHelpers;
+using PathIndex.Application.Commands.CommonHelpers;
+using PathIndex.Domain;
 
 namespace PathIndex.Application.Commands
 {
@@ -8,70 +9,63 @@ namespace PathIndex.Application.Commands
     {
         public static CommandResult Execute(string[] args, AppState appState)
         {
-            const string usage = "Usage: edit <id> name <value>\n       edit <id> note <value>\n       edit <id> clear-note\n";
+            List<string> usage = ["Usage: edit <id> name <value>", "edit <id> note <value>", "edit <id> clear-note"];
             if (args.Length < 2)
             {
-                Console.WriteLine(usage);
-                return;
+                return new CommandResult(false, usage);
             }
 
-            int? nullableIndex = EntryIdHelpers.TryGetEntryIndexById(args, usage, appState);
-            if (nullableIndex is not int index)
-                return;
+            EntryIdLookupResult result = EntryIdHelpers.TryGetEntryIndexById(args, usage, appState);
+            if (result.Index is not int index)
+                return new CommandResult(false, result.Lines);
             Entry entry = appState.Entries[index];
             string field = args[1].ToLowerInvariant();
             if (field != "clear-note" && field != "name" && field != "note")
             {
-                Console.WriteLine("Invalid field: '" + field + "'.\nValid fields: name, note, clear-note.\n" + usage);
-                return;
+                return new CommandResult(false, ["Invalid field: '" + field + "'.Valid fields: name, note, clear-note." + usage]);
             }
-
+            string message;
             if (field == "clear-note")
             {
                 if (args.Length != 2)
                 {
-                    Console.WriteLine(usage);
-                    return;
+                    return new CommandResult(false, usage);
                 }
-                ClearNote(entry);
-                return;
+                message = ClearNote(entry);
+                return new CommandResult(true, [message]);
             }
             if (args.Length != 3)
             {
-                Console.WriteLine(usage);
-                return;
+                return new CommandResult(false, usage);
             }
             if (field == "name")
             {
-                UpdateName(entry, args[2]);
-                return;
+                message = UpdateName(entry, args[2]);
+                return new CommandResult(true, [message]);
             }
-            if (field == "note")
-            {
-                UpdateNote(entry, args[2]);
-                return;
-            }
+            message = UpdateNote(entry, args[2]);
+            return new CommandResult(true, [message]);
         }
 
-        private static void UpdateName(Entry entry, string newName)
+        private static string UpdateName(Entry entry, string newName)
         {
             string originalName = entry.Name;
             entry.Name = newName;
-            Console.WriteLine("Updated name: " + originalName + " to " + newName + "\n");
+            return ("Updated name: " + originalName + " to " + newName);
         }
 
-        private static void UpdateNote(Entry entry, string newNote)
+        private static string UpdateNote(Entry entry, string newNote)
         {
             string originalNote = "(" + (entry.Note ?? "none") + ")";
             entry.Note = newNote;
-            Console.WriteLine("Updated note: " + originalNote + " -> " + newNote + "\n");
+            return ("Updated note: " + originalNote + " -> " + newNote);
         }
 
-        private static void ClearNote(Entry entry)
+        private static string ClearNote(Entry entry)
         {
             string? originalNote = entry.Note;
             entry.Note = null;
-            Console.WriteLine(originalNote == null ? "Nothing to clear.\n" : "Cleared note: (" + originalNote + ")\n");
+            return (originalNote == null ? "Nothing to clear." : "Cleared note: (" + originalNote + ")");
         }
     }
 }

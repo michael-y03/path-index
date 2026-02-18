@@ -3,7 +3,7 @@ namespace PathIndex.Application.Parsing
 {
     internal static class Tokenizer
     {
-        public static string[] TokenizeInput(string input)
+        public static string[]? TokenizeInput(string input)
         {
             List<string> tokens = [];
             bool insideQuotedArgument = false;
@@ -35,8 +35,7 @@ namespace PathIndex.Application.Parsing
                 tokens.Add(argument);
             else
             {
-                Console.WriteLine("Quoted argument error. \n");
-                return [];
+                return null;
             }
 
             string[] allTokens = [.. tokens];

@@ -5,7 +5,7 @@ namespace PathIndex.Application.Commands.CommandHelpers
 {
     internal static class EntryIdHelpers
     {
-        public static EntryIdLookupResult TryGetEntryIndexById(string[] args, string usage, AppState appState)
+        public static EntryIdLookupResult TryGetEntryIndexById(string[] args, List<string> usage, AppState appState)
         {
             if (appState.Entries.Count == 0)
             {
@@ -14,12 +14,12 @@ namespace PathIndex.Application.Commands.CommandHelpers
 
             if (args.Length == 0)
             {
-                return EntryIdLookupResult.Fail([usage]);
+                return EntryIdLookupResult.Fail(usage);
             }
 
             if (!int.TryParse(args[0], out int id))
             {
-                return EntryIdLookupResult.Fail(["Invalid id: '" + args[0] + "'.id must be a number."]);
+                return EntryIdLookupResult.Fail(["Invalid id: '" + args[0] + "'. id must be a number."]);
             }
 
             for (int i = 0; i < appState.Entries.Count; i++)

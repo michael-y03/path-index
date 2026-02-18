@@ -23,7 +23,7 @@
                 "  save                          save PathIndex entries",
                 "  load                          load PathIndex entries",
             ];
-            return new CommandResult(true, resultLines);
+            return new CommandResult(true, resultLines); 
         }
     }
 }

@@ -13,6 +13,7 @@ namespace PathIndex.Cli
                 else
                     Console.Error.WriteLine(line);
             }
+            Console.WriteLine();
         }
     }
 }

@@ -12,7 +12,7 @@ namespace PathIndex.Cli
         {
             Console.WriteLine("PathIndex — index and annotate local folders");
             Console.WriteLine("Type 'help' to see commands.\n");
-            LoadCommand.Execute([], appState);
+            ConsoleRenderer.Render(LoadCommand.Execute([], appState));
 
             while (true)
             {
@@ -26,11 +26,16 @@ namespace PathIndex.Cli
                     input = input.Trim();
                 }
 
-                string[] tokens = Tokenizer.TokenizeInput(input);
-                CommandResult result = CommandDispatcher.Dispatch(tokens, appState);
-                ConsoleRenderer.Render(result);
-                if (result.ShouldExit)
-                    break;
+                string[]? tokens = Tokenizer.TokenizeInput(input);
+                if (tokens is null)
+                    ConsoleRenderer.Render(new CommandResult(false, ["Quoted Argument Error."]));
+                else
+                {
+                    CommandResult result = CommandDispatcher.Dispatch(tokens, appState);
+                    ConsoleRenderer.Render(result);
+                    if (result.ShouldExit)
+                        break;
+                }
             }
         }
     }
