@@ -23,7 +23,7 @@ namespace PathIndex.Application.Commands
             string tag = args[1].ToLowerInvariant();
             if (!entry.Tags.Contains(tag))
             {
-                entry.Tags.Add(tag);
+                entry.AddTag(tag);
                 return new CommandResult(true, ["Entry " + entry.Id + " (" + entry.Name + ") added tag: " + tag]);
             }
             else

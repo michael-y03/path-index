@@ -5,7 +5,7 @@ namespace PathIndex.Application
     internal class AppState
     {
         private readonly List<Entry> _entries = [];
-        public IReadOnlyList<Entry> Entries { get { return _entries.AsReadOnly(); } }
+        public IReadOnlyList<Entry> Entries => _entries.AsReadOnly();
         public int LastIssuedId { get; private set; } = 0;
 
         public int IssueNextId()

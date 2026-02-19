@@ -21,7 +21,7 @@ namespace PathIndex.Application.Commands
             Entry entry = appState.Entries[index];
             string tag = args[1].ToLowerInvariant();
 
-            if (entry.Tags.Remove(tag))
+            if (entry.RemoveTag(tag))
                 return new CommandResult(true, ["Entry " + entry.Id + " (" + entry.Name + ") removed tag: " + tag]);
             else
                 return new CommandResult(true, ["Tag: " + tag + " not found" + " on entry " + entry.Id]);

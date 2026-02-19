@@ -40,8 +40,8 @@ namespace PathIndex.Application.Commands
 
                 foreach (EntryDto dtoEntry in entriesToLoad)
                 {
-                    List<string> tags = dtoEntry.Tags is null ? [] : dtoEntry.Tags;
-                    Entry entry = new(dtoEntry.Id, dtoEntry.TargetPath, dtoEntry.Name, dtoEntry.Note) { Tags = tags };
+                    IEnumerable<string> tags = dtoEntry.Tags is null ? [] : dtoEntry.Tags;
+                    Entry entry = new(dtoEntry.Id, dtoEntry.TargetPath, dtoEntry.Name, dtoEntry.Note, tags) ;
                     loadedEntries.Add(entry);
                 }
                 appState.ReplaceState(saveFileDto.LastIssuedId, loadedEntries);
