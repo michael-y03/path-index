@@ -3,16 +3,20 @@ namespace PathIndex.Application.Commands.CommonHelpers
 {
     internal class EntryIdLookupResult
     {
-        public bool Success { get; }
-        public int? Index { get; }
-        public IReadOnlyList<string> Lines { get; }
+        private readonly bool _success;
+        private readonly int? _index;
+        private readonly IReadOnlyList<string> _lines;
 
         private EntryIdLookupResult(bool success, int? index, IEnumerable<string> lines)
         {
-            Success = success;
-            Index = index;
-            Lines = lines.ToArray();
+            _success = success;
+            _index = index;
+            _lines = [.. lines];
         }
+
+        public bool Success => _success;
+        public int? Index => _index;
+        public IReadOnlyList<string> Lines => _lines;
 
         public static EntryIdLookupResult Found(int index)
         {
